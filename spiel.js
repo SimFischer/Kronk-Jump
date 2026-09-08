@@ -139,7 +139,7 @@
     const data = selected.data;
     questions = data.mischen ? shuffle(data.fragen) : data.fragen.slice();
     thinking = Number($("thinking").value); index = 0; score = 0; camera = 0; oldRows = [];
-    if (![0, 1, 2, 4, 6].includes(thinking)) thinking = 2;
+    if (![0, 1, 2, 4, 6, 8, 10].includes(thinking)) thinking = 2;
     row = makeRow(300); player = { x: W / 2, y: 300 + GAP, vy: -JUMP };
     hold = 0; apexUsed = false; failText = ""; celebration = 0; accumulator = 0;
     mode = "playing"; clearInput(); $("overlay").hidden = true;

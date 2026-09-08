@@ -200,7 +200,7 @@
     }
     if (player.y - camera > H + 110) finish(false);
   }
-  function wrapped(text, x, y, maxWidth) {
+  function textLines(text, maxWidth) {
     // Zeichenweises Umbrechen funktioniert auch bei langen deutschen Wörtern.
     const lines = []; let line = "";
     for (const word of text.split(/\s+/)) {
@@ -214,6 +214,10 @@
       }
     }
     if (line) lines.push(line);
+    return lines;
+  }
+  function wrapped(text, x, y, maxWidth) {
+    const lines = textLines(text, maxWidth);
     // Plattformetikett wächst nach unten; Text wird weder gekürzt noch überlagert.
     const height = Math.max(46, lines.length * 23 + 16);
     ctx.fillStyle = "#ffffff"; ctx.fillRect(x - maxWidth / 2 - 8, y, maxWidth + 16, height);
@@ -234,11 +238,37 @@
     }
     ctx.globalAlpha = 1;
   }
+  function nearbyQuestion() {
+    if (!row || !player) return null;
+    if (row.nearby) return row.nearby;
+    ctx.font = "600 20px system-ui";
+    const answerHeight = Math.max(...row.platforms.map(p =>
+      Math.max(46, textLines(p.text, p.width - 16).length * 23 + 16)));
+    ctx.font = "700 24px system-ui";
+    const lines = textLines(row.q.frage, W - 72);
+    return row.nearby = { lines, y: row.y - camera + 12 + answerHeight + 14,
+      height: lines.length * 30 + 24 };
+  }
+  function drawNearbyQuestion(question) {
+    if (!question) return;
+    const { lines, y, height } = question;
+    ctx.fillStyle = "#fff5ce";
+    ctx.fillRect(20, y, W - 40, height);
+    ctx.strokeStyle = "#102743"; ctx.lineWidth = 2;
+    ctx.strokeRect(20, y, W - 40, height);
+    ctx.fillStyle = "#102743"; ctx.textAlign = "center";
+    ctx.font = "700 24px system-ui";
+    lines.forEach((line, i) => ctx.fillText(line, W / 2, y + 33 + i * 30));
+  }
   function draw() {
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = "#d8f0fb"; ctx.fillRect(0, 0, W, H);
+    // Dieselbe Frage wie oben, direkt unter der längsten Antwort.
+    const nearby = nearbyQuestion();
+    const height = nearby ? Math.max(H, Math.ceil(nearby.y + nearby.height + 20)) : H;
+    if (canvas.height !== height) canvas.height = height;
+    ctx.clearRect(0, 0, W, height);
+    ctx.fillStyle = "#d8f0fb"; ctx.fillRect(0, 0, W, height);
     ctx.strokeStyle = "#bddfeF"; ctx.lineWidth = 1;
-    for (let y = ((-camera * .3) % 60) - 60; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+    for (let y = ((-camera * .3) % 60) - 60; y < height; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
     if (!player) return;
     oldRows.forEach(r => drawRow(r, true)); drawRow(row);
     const img = celebration > 0 || mode === "won" ? images.jubel : player.vy < 0 ? images.sprung : images.normal;
@@ -249,6 +279,7 @@
       // Kleiner Fußmarker macht die Landeposition eindeutig.
       ctx.fillStyle = "#e94232"; ctx.fillRect(player.x - 7, player.y - camera - 3, 14, 3);
     }
+    drawNearbyQuestion(nearby);
   }
   function frame(time) {
     const dt = Math.min((time - last) / 1000 || 0, .05); last = time;
